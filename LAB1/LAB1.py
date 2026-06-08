@@ -27,7 +27,7 @@ def gaussian_method(A, b):
             perm[k], perm[max_col] = perm[max_col], perm[k]
             swap_count += 1
 
-        # зануление элементов под диагональю
+        # зануление
         for i in range(k + 1, n):
             m = A[i][k] / A[k][k]
 
@@ -35,6 +35,7 @@ def gaussian_method(A, b):
                 A[i][j] -= m * A[k][j]
 
             b[i] -= m * b[k]
+    # Треугольная матрица
     triangle_m = copy.deepcopy(A)
     # обратный ход
     x_temp = [0.0] * n

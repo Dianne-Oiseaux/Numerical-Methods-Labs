@@ -9,20 +9,18 @@ def func(x, y):
 # Точное решение
 def exact_solution(table):
     table["Точное решение"] = table["x"].apply(lambda x: -(x * math.log(x)) / (math.log(x) + 1))
-    return table
 
 # Явный м. Эйлера
 def explicit_Euler(table, column="Явный м. Эйлера", h=0.1):
     y_0, x_0 = 0, 1
     y_set = [y_0]
     n = round((2 - 1) / h)
-    for i in range(n): # считаем до предпоследнего вкл, последний не считаем
+    for i in range(n):
         x = x_0 + i * h
         y_next = y_0 + h * func(x, y_0)
         y_set.append(y_next)
         y_0 = y_next
     table[column] = y_set
-    return table
 
 # Уточненный м. Эйлера
 def improved_Euler(table, column="Уточн. м. Эйлера", h=0.1):
@@ -34,9 +32,8 @@ def improved_Euler(table, column="Уточн. м. Эйлера", h=0.1):
         y_next = y_set[i - 1] + 2 * h * func(x_i, y_set[i])
         y_set.append(y_next)
     table[column] = y_set
-    return table
 
-# м. Рунге-Кутта
+# м. Рунге-Кутта 4 порядка
 def Runge_Kutta(table, column="Рунге-Кутта 4 пор.", h=0.1):
     y_0, x_0 = 0, 1
     n = round((2 - 1) / h)
@@ -51,27 +48,17 @@ def Runge_Kutta(table, column="Рунге-Кутта 4 пор.", h=0.1):
         y_set.append(y_next)
         y_0 = y_next
     table[column] = y_set
-    return table
 
+# Уточнение по м. Рунге-Ромберга
 def Runge_Romberg(table, column, y_h, y_h2, p):
     table[column] = y_h2 + (y_h2 - y_h) / (2 ** p - 1)
 
-def error_explicit_Euler(table):
-    table["Eps явн. м. Эйлера"] = abs(table["Точное решение"] - table["Явный м. Эйлера"])
-    table["Eps явн. м. Эйлера"] = table["Eps явн. м. Эйлера"].apply(lambda x: f"{x:e}")
-    return table
+# Вычисление погрешности с точным решением
+def eps_calc(table, res_column, to_substract):
+    table[res_column] = abs(table["Точное решение"] - table[to_substract])
+    table[res_column] = table[res_column].apply(lambda x: f"{x:e}")
 
-def error_improved_Euler(table):
-    table["Eps уточн. м. Эйлера"] = abs(table["Точное решение"] - table["Уточн. м. Эйлера"])
-    table["Eps уточн. м. Эйлера"] = table["Eps уточн. м. Эйлера"].apply(lambda x: f"{x:e}")
-    return table
-
-def error_Runge_Kutta(table):
-    table["Eps м. Рунге-Кутта 4 пор."] = abs(table["Точное решение"] - table["Рунге-Кутта 4 пор."])
-    table["Eps м. Рунге-Кутта 4 пор."] = table["Eps м. Рунге-Кутта 4 пор."].apply(lambda x: f"{x:e}")
-    return table
-
-# Основной код
+# Основная часть программы
 methods_table = pd.DataFrame(columns=["x", "Точное решение", 
                               "Явный м. Эйлера", "Eps явн. м. Эйлера",
                               "Уточн. м. Эйлера", "Eps уточн. м. Эйлера",
@@ -79,25 +66,19 @@ methods_table = pd.DataFrame(columns=["x", "Точное решение",
 methods_table["x"] = [x/10 for x in range(10, 21)]
 
 exact_solution(methods_table)
-
 explicit_Euler(methods_table)
-error_explicit_Euler(methods_table)
-
+eps_calc(methods_table, "Eps явн. м. Эйлера", "Явный м. Эйлера")
 improved_Euler(methods_table)
-error_improved_Euler(methods_table)
-
+eps_calc(methods_table, "Eps уточн. м. Эйлера", "Уточн. м. Эйлера")
 Runge_Kutta(methods_table)
-error_Runge_Kutta(methods_table)
-
+eps_calc(methods_table, "Eps м. Рунге-Кутта 4 пор.", "Рунге-Кутта 4 пор.")
 print(methods_table, end="\n\n")
 
 # Для h = 0.2:
-
 rename_cols = {"Явный м. Эйлера":"Явн м. Эйлера h=0.1", "Уточн. м. Эйлера":"Уточн. м. Эйлера h=0.1", \
              "Рунге-Кутта 4 пор.":"Рунге-Кутта 4 пор h=0.1"}
 RR_table = methods_table.iloc[::2].loc[:, ["x", "Явный м. Эйлера", "Уточн. м. Эйлера", "Рунге-Кутта 4 пор."]].reset_index(drop=True)
 RR_table = RR_table.rename(columns=rename_cols)
-
 RR_cols = ["Явн м. Эйлера h=0.2", "Рунге-Ромберг (явн. м. Эйлера)", "Уточн. м. Эйлера h=0.2", \
            "Рунге-Ромберг (уточн. м. Эйлера)", "Рунге-Кутта 4 пор h=0.2", "Рунге-Ромберг (Рунге-Кутта)"]
 RR_table[RR_cols] = None
@@ -108,22 +89,31 @@ Runge_Kutta(RR_table, "Рунге-Кутта 4 пор h=0.2", 0.2)
 
 Runge_Romberg(RR_table, "Рунге-Ромберг (явн. м. Эйлера)", RR_table["Явн м. Эйлера h=0.2"], \
               RR_table["Явн м. Эйлера h=0.1"], 1)
-
 Runge_Romberg(RR_table, "Рунге-Ромберг (уточн. м. Эйлера)", RR_table["Уточн. м. Эйлера h=0.2"], \
               RR_table["Уточн. м. Эйлера h=0.1"], 2)
-
 Runge_Romberg(RR_table, "Рунге-Ромберг (Рунге-Кутта)", RR_table["Рунге-Кутта 4 пор h=0.2"], \
               RR_table["Рунге-Кутта 4 пор h=0.1"], 4)
 
-RR_table.reset_index(drop=True)
-print("Рунге-Ромберг для Явного м. Эйлера:")
+print("Уточнение по Рунге-Ромбергу для Явного м. Эйлера:")
 print(RR_table[["x", "Явн м. Эйлера h=0.1", "Явн м. Эйлера h=0.2", \
                            "Рунге-Ромберг (явн. м. Эйлера)"]], end="\n\n")
-
-print("Рунге-Ромберг для Уточненного м. Эйлера:")
+print("Уточнение по Рунге-Ромбергу для Уточненного м. Эйлера:")
 print(RR_table[["x", "Уточн. м. Эйлера h=0.1", "Уточн. м. Эйлера h=0.2", \
                            "Рунге-Ромберг (уточн. м. Эйлера)"]], end="\n\n")
-
-print("Рунге-Ромберг для м. Рунге-Кутта 4 порядка:")
+print("Уточнение по Рунге-Ромбергу для м. Рунге-Кутта 4 порядка:")
 print(RR_table[["x", "Рунге-Кутта 4 пор h=0.1", "Рунге-Кутта 4 пор h=0.2", \
                            "Рунге-Ромберг (Рунге-Кутта)"]], end="\n\n")
+
+# Построение графика
+plt.figure(figsize=(10, 6))
+plt.plot(methods_table["x"], methods_table["Точное решение"], linewidth=3, linestyle="--", label="Точное решение")
+plt.plot(methods_table["x"], methods_table["Явный м. Эйлера"], marker="o", label="Явный м. Эйлера")
+plt.plot(methods_table["x"], methods_table["Уточн. м. Эйлера"], marker="s", label="Уточнённый м. Эйлера")
+plt.plot(methods_table["x"], methods_table["Рунге-Кутта 4 пор."], marker="^", label="м. Рунге-Кутта 4 порядка")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.title("Сравнение методов с точным решением")
+plt.grid(True)
+plt.legend()
+plt.savefig("methods_plot.png", bbox_inches="tight")
+plt.show()
